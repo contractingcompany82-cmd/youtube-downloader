@@ -1,47 +1,38 @@
 import streamlit as st
-import yt_dlp
+import requests
 
-st.set_page_config(page_title="YouTube Downloader", page_icon="📥")
+st.set_page_config(page_title="Weather App", page_icon="🌦️")
 
-st.title("📥 YouTube Video Downloader")
+st.title("🌦️ Live Weather App")
 
-url = st.text_input("YouTube URL")
+API_KEY = st.secrets["OPENWEATHER_API_KEY"]  # Store API key safely in Streamlit Cloud
 
-download_type = st.radio("Choose format", ["Video (MP4)", "Audio Only"])
+city = st.text_input("Enter city name")
 
-if st.button("Download"):
-    if not url:
-        st.error("Please enter a valid URL.")
+if st.button("Get Weather"):
+    if city.strip() == "":
+        st.error("Please enter a valid city name.")
     else:
-        st.info("Downloading... Please wait.")
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
 
-        try:
-            if download_type == "Video (MP4)":
-                ydl_opts = {
-                    "format": "bv*+ba/b",
-                    "outtmpl": "video.%(ext)s",
-                    "merge_output_format": "mp4",
-                }
-                file_name = "video.mp4"
+        response = requests.get(url)
 
-            else:
-                ydl_opts = {
-                    "format": "bestaudio/best",
-                    "outtmpl": "audio.%(ext)s",
-                }
-                file_name = "audio.webm"
+        if response.status_code == 200:
+            data = response.json()
 
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
+            temp = data["main"]["temp"]
+            feels = data["main"]["feels_like"]
+            humidity = data["main"]["humidity"]
+            wind = data["wind"]["speed"]
+            desc = data["weather"][0]["description"].title()
 
-            with open(file_name, "rb") as f:
-                st.download_button(
-                    label="Download File",
-                    data=f,
-                    file_name=file_name,
-                )
+            st.success(f"Weather in {city.title()}")
 
-            st.success("Download ready!")
+            st.write(f"**Temperature:** {temp}°C")
+            st.write(f"**Feels Like:** {feels}°C")
+            st.write(f"**Condition:** {desc}")
+            st.write(f"**Humidity:** {humidity}%")
+            st.write(f"**Wind Speed:** {wind} m/s")
 
-        except Exception as e:
-            st.error(f"Error: {e}")
+        else:
+            st.error("City not found or API error.")
