@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_KEY = "YOUR_OPENWEATHER_API_KEY"  # yahan apna key daalo
+API_KEY = "6a18383c8cb44785ddcc220e7019b233"  # yahan apna key daalo
 BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 def get_weather(city):
