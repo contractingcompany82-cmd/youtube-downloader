@@ -1,54 +1,53 @@
 import streamlit as st
 import requests
 
-API_KEY = "6a18383c8cb44785ddcc220e7019b233"   # <-- yahan apni key daalo
+API_KEY = "6a18383c8cb44785ddcc220e7019b233"  # yahan apna key daalo
 BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
-st.set_page_config(page_title="Weather App", page_icon="🌦", layout="centered")
-
-# ---------- UI Styling ----------
-st.markdown("""
-    <style>
-        .big-temp { font-size: 60px; font-weight: 700; text-align: center; }
-        .weather-box {
-            padding: 20px;
-            border-radius: 15px;
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# ---------- Weather Fetch Function ----------
 def get_weather(city):
-    params = {"q": city, "appid": API_KEY, "units": "metric"}
+    params = {
+        "q": city,
+        "appid": API_KEY,
+        "units": "metric"  # Celsius
+    }
     try:
-        r = requests.get(BASE_URL, params=params, timeout=10)
-        data = r.json()
-        if r.status_code != 200:
+        resp = requests.get(BASE_URL, params=params, timeout=10)
+        data = resp.json()
+        if resp.status_code != 200:
             return None, data.get("message", "Error")
         return data, None
     except Exception as e:
         return None, str(e)
 
-# ---------- App UI ----------
-st.title("🌦 Beautiful Weather App")
-st.write("City ka naam likho aur stylish weather info dekho.")
+st.set_page_config(page_title="Weather App", page_icon="☁️")
 
-city = st.text_input("City Name", "London")
+st.title("🌤 Simple Weather Checker")
+st.write("City ka naam likho aur weather dekh lo.")
+
+city = st.text_input("City name", value="London")
 
 if st.button("Check Weather"):
-    data, error = get_weather(city)
-
-    if error:
-        st.error(f"⚠️ Error: {error}")
+    if not city.strip():
+        st.warning("Pehle city ka naam likho.")
     else:
-        weather = data["weather"][0]
-        main = data["main"]
-        wind = data["wind"]
+        with st.spinner("Weather laa raha hoon..."):
+            data, error = get_weather(city.strip())
 
-        icon = weather["icon"]
-        icon_url = f"https://openweathermap.org/img/wn/{icon}@2x.png"
+        if error:
+            st.error(f"Kuch gadbad hai: {error}")
+        else:
+            st.success(f"Weather for {data['name']}, {data['sys']['country']}")
+            col1, col2 = st.columns(2)
 
-        st
+            with col1:
+                st.metric("Temperature (°C)", f"{data['main']['temp']}°C")
+                st.metric("Feels like", f"{data['main']['feels_like']}°C")
+                st.write(f"**Condition:** {data['weather'][0]['description'].title()}")
+
+            with col2:
+                st.write(f"**Humidity:** {data['main']['humidity']}%")
+                st.write(f"**Pressure:** {data['main']['pressure']} hPa")
+                st.write(f"**Wind:** {data['wind']['speed']} m/s")
+
+            st.write("---")
+            st.json(data)  # raw response bhi dekhna ho to
